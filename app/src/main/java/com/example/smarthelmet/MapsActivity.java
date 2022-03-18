@@ -4,6 +4,8 @@ import androidx.fragment.app.FragmentActivity;
 
 import android.app.ProgressDialog;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -64,7 +66,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                   btn.setText("Engine Off");
                 }
                 //This method runs in the same thread as the UI.
-                RequestQueue queue = Volley.newRequestQueue(MapsActivity.this);
+                RequestQueue queue1 = Volley.newRequestQueue(MapsActivity.this);
                 JSONObject data=new JSONObject();
                 try {
                     data.put("engineOnOfStatus",isengineOn);
@@ -72,22 +74,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     e.printStackTrace();
                 }
                 p.show();
-
-                JsonObjectRequest request =new JsonObjectRequest(Request.Method.POST, ConfigSetting.host+"/Home/GetLocationStatus/", data,
+                JsonObjectRequest request =new JsonObjectRequest(Request.Method.POST, ConfigSetting.host+"/Home/PostLocationStatus/", data,
                         new Response.Listener<JSONObject>() {
                             @Override
                             public void onResponse(JSONObject response) {
+                                try {
+                                    String status=response.getString("status");
+                                    Toast.makeText(MapsActivity.this,status , Toast.LENGTH_SHORT).show();
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
 
-                                Toast.makeText(MapsActivity.this, response.toString(), Toast.LENGTH_SHORT).show();
+                                p.hide();
 
                             }
                         }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(getApplicationContext(),error.getMessage().toString(),Toast.LENGTH_LONG).show();
+                        error.printStackTrace();
+                        p.hide();
+                        //Toast.makeText(getApplicationContext(),error.getMessage().toString(),Toast.LENGTH_LONG).show();
                     }
                 });
-                queue.add(request);
+                queue1.add(request);
                 //Do something to the UI thread here
             }
         });
@@ -106,66 +115,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-        myTimer = new Timer();
-        myTimer.schedule(new TimerTask() {
+        new android.os.Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                TimerMethod();
-            }
-
-        }, 0, 3000);
-    }
-    private void TimerMethod()
-    {
-        //This method is called directly by the timer
-        //and runs in the same thread as the timer.
-
-        //We call the method that will work with the UI
-        //through the runOnUiThread method.
-        this.runOnUiThread(Timer_Tick);
-    }
-
-
-    private Runnable Timer_Tick = new Runnable() {
-        public void run() {
-
-            //This method runs in the same thread as the UI.
-            RequestQueue queue = Volley.newRequestQueue(MapsActivity.this);
-
-
-            JsonObjectRequest request =new JsonObjectRequest(Request.Method.GET, ConfigSetting.host+"/Home/GetLocationStatus/", null,
-                    new Response.Listener<JSONObject>() {
-                        @Override
-                        public void onResponse(JSONObject response) {
-                            try {
-                                double lat=response.getDouble("lat");
-                                double lang=response.getDouble("lng");
-                                latLng = new LatLng(lat,lang);
-                                if(liveMarker == null){
-                                    liveMarker = mMap.addMarker(new MarkerOptions().position(latLng).title("My Position"));
+                RequestQueue queue = Volley.newRequestQueue(MapsActivity.this);
+                JsonObjectRequest request =new JsonObjectRequest(Request.Method.GET, ConfigSetting.host+"/Home/GetLocationStatus/", null,
+                        new Response.Listener<JSONObject>() {
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                try {
+                                    double lat=response.getDouble("lat");
+                                    double lang=response.getDouble("lng");
+                                    latLng = new LatLng(lat,lang);
+                                    if(liveMarker == null){
+                                        liveMarker = mMap.addMarker(new MarkerOptions().position(latLng).title("My Position"));
+                                    }
+                                    else {
+                                        liveMarker.setPosition(latLng);
+                                    }
+                                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,18));
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
                                 }
-                                else {
-                                    liveMarker.setPosition(latLng);
-                                }
-                                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,18));
-                            } catch (JSONException e) {
-                                e.printStackTrace();
+
                             }
+                        }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        error.printStackTrace();
+                        //Toast.makeText(getApplicationContext(),error.getMessage().toString(),Toast.LENGTH_LONG).show();
+                    }
+                });
+                queue.add(request);
+            }
+        }, 500);
 
-                        }
-                    }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Toast.makeText(getApplicationContext(),error.getMessage().toString(),Toast.LENGTH_LONG).show();
-                }
-            });
-            queue.add(request);
-            //Do something to the UI thread here
+        // Param is optional, to run task on UI thread.
 
-        }
-    };
+    }
+
+
+
 }
