@@ -100,24 +100,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 //Do something to the UI thread here
             }
         });
-    }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
-
-        new android.os.Handler().postDelayed(new Runnable() {
+        Handler handler = new Handler(Looper.getMainLooper());
+        Runnable runnable = new Runnable() {
             @Override
             public void run() {
+                Toast.makeText(getApplicationContext(),"Timer",Toast.LENGTH_SHORT).show();
                 RequestQueue queue = Volley.newRequestQueue(MapsActivity.this);
                 JsonObjectRequest request =new JsonObjectRequest(Request.Method.GET, ConfigSetting.host+"/Home/GetLocationStatus/", null,
                         new Response.Listener<JSONObject>() {
@@ -128,7 +116,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     double lang=response.getDouble("lng");
                                     latLng = new LatLng(lat,lang);
                                     if(liveMarker == null){
-                                        liveMarker = mMap.addMarker(new MarkerOptions().position(latLng).title("My Position"));
+                                        liveMarker = mMap.addMarker(new MarkerOptions().position(latLng).title("My Bike is Here"));
                                     }
                                     else {
                                         liveMarker.setPosition(latLng);
@@ -147,9 +135,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 });
                 queue.add(request);
+                // Do the task...
+                handler.postDelayed(this, 2000); // Optional, to repeat the task.
             }
-        }, 500);
+        };
+        handler.postDelayed(runnable, 1500);
+    }
 
+    /**
+     * Manipulates the map once available.
+     * This callback is triggered when the map is ready to be used.
+     * This is where we can add markers or lines, add listeners or move the camera. In this case,
+     * we just add a marker near Sydney, Australia.
+     * If Google Play services is not installed on the device, the user will be prompted to install
+     * it inside the SupportMapFragment. This method will only be triggered once the user has
+     * installed Google Play services and returned to the app.
+     */
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
         // Param is optional, to run task on UI thread.
 
     }
