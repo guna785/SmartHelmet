@@ -3,11 +3,14 @@ package com.example.smarthelmet;
 import androidx.fragment.app.FragmentActivity;
 
 import android.app.ProgressDialog;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.CalendarContract;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -38,6 +41,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     Marker liveMarker;
     private Timer myTimer;
     Button btn;
+    TextView sts;
     ProgressDialog p;
     boolean isengineOn=true;
     private LatLng latLng;
@@ -50,6 +54,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         btn=(Button)findViewById(R.id.btn);
         p=new ProgressDialog(this);
         p.setTitle("Please Wait...");
+        sts=(TextView) findViewById(R.id.sts);
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -84,9 +89,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 } catch (JSONException e) {
                                     e.printStackTrace();
                                 }
-
                                 p.hide();
-
                             }
                         }, new Response.ErrorListener() {
                     @Override
@@ -114,7 +117,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 try {
                                     double lat=response.getDouble("lat");
                                     double lang=response.getDouble("lng");
+                                    boolean stats=response.getBoolean("emergency");
                                     latLng = new LatLng(lat,lang);
+                                    if(stats){
+                                        sts.setTextColor(Color.RED);
+                                        sts.setText("Accident occured !!!! ");
+                                    }
+                                    else {
+                                        sts.setTextColor(Color.GREEN);
+                                        sts.setText("Normal !!!! ");
+                                    }
                                     if(liveMarker == null){
                                         liveMarker = mMap.addMarker(new MarkerOptions().position(latLng).title("My Bike is Here"));
                                     }
